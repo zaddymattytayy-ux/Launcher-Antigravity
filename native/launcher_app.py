@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QApplication, QToolButton
+from PyQt6.QtWidgets import QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QApplication, QToolButton, QButtonGroup
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWebChannel import QWebChannel
 from PyQt6.QtCore import QUrl, Qt, QEvent, QSize
@@ -66,7 +66,6 @@ class LauncherApp(QMainWindow):
         self._icon_donate = self._load_icon("paid.svg")
         self._icon_guides = self._load_icon("menu_book.svg")
         self._icon_events = self._load_icon("event.svg")
-        self._icon_shield = self._load_icon("security.svg")
         self._icon_power = self._load_icon("power_settings_new.svg")
 
         # Top: Logo button (52x52)
@@ -78,45 +77,47 @@ class LauncherApp(QMainWindow):
         self.logo_btn.setToolTip("Opal MU - Home")
         sidebar_layout.addWidget(self.logo_btn, 0, Qt.AlignmentFlag.AlignHCenter)
 
-        # Stretch to push nav pill to center
-        sidebar_layout.addStretch(1)
-
-        # Navigation pill container (4 main nav icons on single background)
-        self.nav_pill = QWidget(self.sidebar)
-        self.nav_pill.setObjectName("NavPill")
-        nav_pill_layout = QVBoxLayout(self.nav_pill)
-        nav_pill_layout.setContentsMargins(0, 12, 0, 12)
-        nav_pill_layout.setSpacing(8)
-        nav_pill_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        # Create 4 main nav buttons (Home, Rankings, Donate, Guides)
-        self.btn_home = self._create_nav_pill_button(self._icon_home, "Home")
-        self.btn_rankings = self._create_nav_pill_button(self._icon_rankings, "Rankings")
-        self.btn_donate = self._create_nav_pill_button(self._icon_donate, "Donate")
-        self.btn_guides = self._create_nav_pill_button(self._icon_guides, "Guides")
-
-        self.btn_home.setChecked(True)  # Default to home
-
-        for btn in [self.btn_home, self.btn_rankings, self.btn_donate, self.btn_guides]:
-            nav_pill_layout.addWidget(btn, 0, Qt.AlignmentFlag.AlignHCenter)
-
-        sidebar_layout.addWidget(self.nav_pill, 0, Qt.AlignmentFlag.AlignHCenter)
-
-        # Events icon (separate, below the pill)
+        # Events icon (under logo, 12px gap, no pill)
         sidebar_layout.addSpacing(12)
         self.btn_events = self._create_sidebar_button(self._icon_events, "Events")
         sidebar_layout.addWidget(self.btn_events, 0, Qt.AlignmentFlag.AlignHCenter)
 
+        # Stretch to push nav pill to center
+        sidebar_layout.addStretch(1)
+
+        # Navigation pill container (3 main nav icons: Home, Rankings, Guides)
+        from PyQt6.QtWidgets import QFrame
+        self.nav_pill_frame = QFrame(self.sidebar)
+        self.nav_pill_frame.setObjectName("NavPillFrame")
+        self.nav_pill_frame.setFixedSize(48, 145)
+        
+        nav_pill_layout = QVBoxLayout(self.nav_pill_frame)
+        nav_pill_layout.setContentsMargins(0, 0, 0, 0)
+        nav_pill_layout.setSpacing(0) # Spacing handled by distribution or manual if needed, but user said spacing 16 in prompt setup, let's check
+        # User prompt: "self.navPillLayout.setSpacing(16)"
+        nav_pill_layout.setSpacing(16)
+        nav_pill_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # Create 3 main nav buttons (Home, Rankings, Guides)
+        self.btn_home = self._create_sidebar_button(self._icon_home, "Home")
+        self.btn_rankings = self._create_sidebar_button(self._icon_rankings, "Rankings")
+        self.btn_guides = self._create_sidebar_button(self._icon_guides, "Guides")
+
+        self.btn_home.setChecked(True)  # Default to home
+
+        for btn in [self.btn_home, self.btn_rankings, self.btn_guides]:
+            nav_pill_layout.addWidget(btn, 0, Qt.AlignmentFlag.AlignHCenter)
+
+        sidebar_layout.addWidget(self.nav_pill_frame, 0, Qt.AlignmentFlag.AlignHCenter)
+
         # Stretch to push bottom icons down
         sidebar_layout.addStretch(1)
 
-        # Bottom group: Settings (shield) + Power
-        self.btn_shield = self._create_sidebar_button(self._icon_shield, "Game installation detected")
-        self.btn_shield.setCheckable(False)
-        self.btn_shield.setObjectName("StatusIcon")
-        sidebar_layout.addWidget(self.btn_shield, 0, Qt.AlignmentFlag.AlignHCenter)
+        # Bottom group: Donate -> Power
+        self.btn_donate = self._create_sidebar_button(self._icon_donate, "Donate")
+        sidebar_layout.addWidget(self.btn_donate, 0, Qt.AlignmentFlag.AlignHCenter)
 
-        sidebar_layout.addSpacing(16)
+        sidebar_layout.addSpacing(12)
 
         self.btn_power = self._create_sidebar_button(self._icon_power, "Exit")
         self.btn_power.setCheckable(False)
@@ -177,20 +178,17 @@ class LauncherApp(QMainWindow):
         # Log geometry details
         self.log_geometry("INIT")
 
-        # Apply stylesheet with nav pill and rounded corners
+        # Apply stylesheet matching React sidebar
         self.setStyleSheet("""
             #RootFrame {
                 background-color: #020617;
-                border-radius: 28px;
+                border-radius: 24px;
             }
 
             #Sidebar {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                                            stop:0 rgba(42, 46, 61, 1), 
-                                            stop:1 rgba(26, 29, 40, 1));
-                border-right: 1px solid rgba(255, 255, 255, 0.08);
-                border-top-left-radius: 28px;
-                border-bottom-left-radius: 28px;
+                background-color: #2c2f49;
+                border-top-left-radius: 24px;
+                border-bottom-left-radius: 24px;
                 border-top-right-radius: 0;
                 border-bottom-right-radius: 0;
             }
@@ -208,60 +206,25 @@ class LauncherApp(QMainWindow):
             }
 
             /* Navigation pill container */
-            #NavPill {
-                background-color: rgba(22, 24, 38, 0.95);
-                border-radius: 28px;
-                padding: 12px 0;
+            #NavPillFrame {
+                background-color: rgba(0, 0, 0, 0.25);
+                border-radius: 24px;
             }
 
-            /* Nav pill buttons - transparent, no background */
-            QToolButton.nav-pill-btn {
-                background: transparent;
-                border: none;
-                border-radius: 20px;
-            }
-
-            QToolButton.nav-pill-btn:checked {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                                            stop:0 #8b5cf6, stop:1 #6366f1);
-            }
-
-            QToolButton.nav-pill-btn:hover {
-                background-color: rgba(255, 255, 255, 0.08);
-            }
-
-            QToolButton.nav-pill-btn:checked:hover {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                                            stop:0 #9d6fff, stop:1 #7477ff);
-            }
-
-            /* Separate buttons (Events, etc) */
+            /* Sidebar buttons - transparent, no background */
             #SidebarButton {
-                border-radius: 9999px;
-                background-color: rgba(255, 255, 255, 0.04);
-                border: 1px solid rgba(255, 255, 255, 0.06);
-            }
-
-            #SidebarButton:checked {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                                            stop:0 #8b5cf6, stop:1 #6366f1);
                 border: none;
+                background: transparent;
+                padding: 0;
+                margin: 0;
+                border-radius: 0;
             }
 
             #SidebarButton:hover {
-                background-color: rgba(255, 255, 255, 0.08);
+                background: transparent;
             }
-
-            #SidebarButton:checked:hover {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                                            stop:0 #9d6fff, stop:1 #7477ff);
-            }
-
-            #StatusIcon {
-                border-radius: 9999px;
-                background-color: rgba(255, 255, 255, 0.04);
-                border: 1px solid rgba(255, 255, 255, 0.08);
-            }
+            
+            /* Active state styling handled via icon color update in logic or separate mechanism if needed */
 
             #ExitButton {
                 border-radius: 9999px;
@@ -275,48 +238,61 @@ class LauncherApp(QMainWindow):
 
             #WebContainer {
                 background-color: transparent;
-                border-top-right-radius: 28px;
-                border-bottom-right-radius: 28px;
+                border-top-right-radius: 24px;
+                border-bottom-right-radius: 24px;
                 border-top-left-radius: 0;
                 border-bottom-left-radius: 0;
             }
         """)
+
+        # Setup button group for exclusive selection across different parents
+        self.nav_group = QButtonGroup(self)
+        # Logo is not checkable, so don't add to group
+        self.nav_group.addButton(self.btn_home)
+        self.nav_group.addButton(self.btn_rankings)
+        self.nav_group.addButton(self.btn_guides)
+        self.nav_group.addButton(self.btn_events)
+        self.nav_group.addButton(self.btn_donate)
+        
+        # Connect buttons to navigation
+        self.logo_btn.clicked.connect(lambda: self._handle_logo_click())
+        self.btn_home.clicked.connect(lambda: self._navigate_to('home'))
+        self.btn_rankings.clicked.connect(lambda: self._navigate_to('rankings'))
+        self.btn_guides.clicked.connect(lambda: self._navigate_to('guides'))
+        self.btn_events.clicked.connect(lambda: self._navigate_to('events'))
+        self.btn_donate.clicked.connect(lambda: self._navigate_to('donate'))
 
         # Load frontend
         url = QUrl("http://localhost:5175")
         print("Loading development server: http://localhost:5175")
         self.webview.load(url)
 
+    def _navigate_to(self, view_name: str):
+        """Navigate to a specific view in the React app."""
+        print(f"Navigating to {view_name}")
+        self.webview.page().runJavaScript(f"if(window.navigateTo) window.navigateTo('{view_name}');")
+
+    def _handle_logo_click(self):
+        """Handle logo click: check home button and navigate home."""
+        self.btn_home.setChecked(True)
+        self._navigate_to('home')
+
     def _load_icon(self, name: str) -> QIcon:
         """Load an icon from the resources/icons directory."""
         path = ICON_BASE / name
         return QIcon(str(path))
 
-    def _create_nav_pill_button(self, icon: QIcon, tooltip: str = "") -> QToolButton:
-        """Create a button for the navigation pill (transparent background)."""
-        btn = QToolButton(self.nav_pill)
-        btn.setIcon(icon)
-        btn.setIconSize(QSize(20, 20))
-        btn.setToolTip(tooltip)
-        btn.setCheckable(True)
-        btn.setAutoExclusive(True)
-        btn.setFixedSize(40, 40)
-        btn.setProperty("class", "nav-pill-btn")
-        btn.setStyleSheet("QToolButton { background: transparent; border: none; border-radius: 20px; } "
-                         "QToolButton:checked { background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #8b5cf6, stop:1 #6366f1); } "
-                         "QToolButton:hover { background-color: rgba(255, 255, 255, 0.08); } "
-                         "QToolButton:checked:hover { background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #9d6fff, stop:1 #7477ff); }")
-        return btn
+
 
     def _create_sidebar_button(self, icon: QIcon, tooltip: str = "") -> QToolButton:
-        """Create a styled sidebar button with icon."""
+        """Create a styled sidebar button with icon (transparent, no bg)."""
         btn = QToolButton(self.sidebar)
         btn.setIcon(icon)
-        btn.setIconSize(QSize(20, 20))  # Match React icon size
+        btn.setIconSize(QSize(32, 32))  # Updated to 32px as per request
         btn.setToolTip(tooltip)
         btn.setCheckable(True)
         btn.setAutoExclusive(True)
-        btn.setFixedSize(40, 40)  # Match React button size
+        btn.setFixedSize(48, 48)  # Updated to 48px as per request
         btn.setObjectName("SidebarButton")
         return btn
 

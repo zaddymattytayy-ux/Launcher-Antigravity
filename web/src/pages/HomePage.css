@@ -127,7 +127,7 @@
 }
 
 .hero-button-primary {
-  background: var(--gradient-purple);
+  background: #7b4dfb;
   color: #fff;
   box-shadow: 0 12px 26px rgba(139, 92, 246, 0.45);
 }
