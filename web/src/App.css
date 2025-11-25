@@ -1,0 +1,26 @@
+/* App-specific styles - minimal since most is in index.css */
+
+.launcher-root {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+.react-content {
+    flex: 1;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Modal overlay */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}

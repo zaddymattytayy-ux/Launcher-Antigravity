@@ -1,0 +1,108 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Glassmorphism CSS Variables */
+:root {
+  /* Layout */
+  --main-panel-max-width: 1400px;
+  --sidebar-width: 80px;
+
+  /* Colors */
+  --color-bg: #020617;
+  --color-surface: #0f172a;
+  --color-purple: #8B5CF6;
+  --color-purple-light: #A78BFA;
+  --color-orange: #F97316;
+  --color-green: #10B981;
+  --color-red: #EF4444;
+  --color-text-base: #E2E8F0;
+  --color-text-strong: #F1F5F9;
+  --color-text-muted: #94A3B8;
+
+  /* Glass effect */
+  --glass-bg: rgba(15, 23, 42, 0.4);
+  --glass-blur: 20px;
+  --glass-border: rgba(255, 255, 255, 0.1);
+
+  /* Gradients */
+  --gradient-purple: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);
+  --gradient-orange: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
+  --shadow-glow-purple: 0 0 20px rgba(139, 92, 246, 0.5);
+
+  /* Responsive scaling */
+  --card-radius: 24px;
+  --card-padding: 24px;
+  --title-font-size: 32px;
+}
+
+/* Media queries for resolution scaling */
+@media (min-width: 1600px) {
+  :root {
+    --card-padding: 28px;
+    --title-font-size: 36px;
+  }
+}
+
+@media (max-width: 1280px) {
+  :root {
+    --card-padding: 20px;
+    --title-font-size: 28px;
+  }
+}
+
+/* Base reset and layout */
+html,
+body,
+#root,
+#launcher-root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text-base);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Inter', 'Roboto', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.app-content {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.4);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.5);
+}

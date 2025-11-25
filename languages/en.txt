@@ -1,0 +1,13 @@
+start_game=Start Game
+settings=Settings
+exit=Exit
+login=Login
+username=Username
+password=Password
+remember_me=Remember Me
+news=News
+rankings=Rankings
+donate=Donate
+guides=Guides
+events=Events
+admin_panel=Admin Panel

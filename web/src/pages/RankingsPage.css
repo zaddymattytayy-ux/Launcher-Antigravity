@@ -1,0 +1,144 @@
+.rankings-page {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 32px 40px;
+    overflow-y: auto;
+    gap: 24px;
+}
+
+.page-title {
+    font-size: 2rem;
+    margin: 0;
+}
+
+.category-tabs {
+    display: flex;
+    gap: 12px;
+}
+
+.category-tab {
+    padding: 10px 20px;
+    border-radius: 9999px;
+    border: none;
+    background: var(--glass-bg);
+    color: var(--color-text-muted);
+    border: 1px solid var(--glass-border);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+}
+
+.category-tab:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.category-tab.active {
+    background: var(--gradient-purple);
+    color: white;
+    border-color: transparent;
+}
+
+.filters {
+    display: flex;
+    gap: 16px;
+}
+
+.filter-select,
+.filter-search {
+    padding: 10px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    color: var(--color-text-base);
+    font-size: 13px;
+    font-family: inherit;
+    backdrop-filter: blur(10px);
+}
+
+.filter-select {
+    min-width: 150px;
+}
+
+.filter-search {
+    flex: 1;
+}
+
+.filter-search::placeholder {
+    color: var(--color-text-subtle);
+}
+
+.rankings-table {
+    flex: 1;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+thead th {
+    text-align: left;
+    padding: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background 0.2s ease;
+}
+
+tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+tbody td {
+    padding: 12px;
+    color: var(--color-text-base);
+    font-size: 13px;
+}
+
+.rank-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rank-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-text-subtle);
+}
+
+.rank-dot.top {
+    background: var(--color-green);
+}
+
+.class-icon {
+    font-size: 18px;
+}
+
+.name-cell {
+    font-weight: 600;
+    color: var(--color-text-strong);
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}

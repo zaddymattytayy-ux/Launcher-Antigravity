@@ -1,0 +1,13 @@
+{
+    "server_name": "MU Online Custom Server",
+    "version": "1.0.0",
+    "update_url": "http://localhost/update/",
+    "api_url": "http://localhost/CustomLauncher/api/",
+    "game_executable": "main.exe",
+    "max_clients": 3,
+    "resolution": "1920x1080",
+    "window_mode": true,
+    "sound": true,
+    "music": true,
+    "language": "en"
+}

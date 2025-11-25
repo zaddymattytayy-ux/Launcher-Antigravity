@@ -1,0 +1,127 @@
+.react-sidebar {
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar {
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 0;
+  background: linear-gradient(180deg, rgba(42, 46, 61, 1) 0%, rgba(26, 29, 40, 1) 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.sidebar-middle {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.logo-button {
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  border: none;
+  background: var(--gradient-purple);
+  color: white;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 18px rgba(140, 82, 255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-button:hover {
+  transform: translateY(-1px);
+}
+
+.logo-text {
+  user-select: none;
+}
+
+.nav-icons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.sidebar-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-icon {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.nav-icon:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.nav-icon.active {
+  background: var(--gradient-purple);
+  color: #fff;
+  box-shadow: 0 0 16px rgba(140, 82, 255, 0.4);
+}
+
+.sidebar-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.status-icon {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.status-icon.installed {
+  color: var(--color-green);
+}
+
+.status-icon.not-installed {
+  color: var(--color-red);
+}
+
+.exit-button:hover {
+  transform: translateY(-1px);
+  color: var(--color-red);
+  background: rgba(239, 68, 68, 0.12);
+}
