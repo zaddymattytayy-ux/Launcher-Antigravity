@@ -128,6 +128,7 @@ class LauncherApp(QMainWindow):
         """Begin drag when the React sidebar signals a mouse-down."""
         self._dragging = True
         self._drag_pos = QCursor.pos()
+        print(f"[DRAG] Started dragging from sidebar at {self._drag_pos}")
 
     def mouseMoveEvent(self, event):
         if self._dragging and self._drag_pos is not None:
@@ -138,19 +139,19 @@ class LauncherApp(QMainWindow):
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
+        if self._dragging:
+            print("[DRAG] Stopped dragging")
         self._dragging = False
         self._drag_pos = None
         super().mouseReleaseEvent(event)
 
     def eventFilter(self, obj, event):
-        if obj == self.webview and event.type() in (
-            QEvent.Type.MouseMove,
-            QEvent.Type.MouseButtonRelease,
-        ):
-            if event.type() == QEvent.Type.MouseMove and self._dragging:
+        # Forward mouse events from webview to window when dragging
+        if obj == self.webview and self._dragging:
+            if event.type() == QEvent.Type.MouseMove:
                 self.mouseMoveEvent(event)
-            if event.type() == QEvent.Type.MouseButtonRelease and self._dragging:
+                return False  # Allow webview to process event too
+            elif event.type() == QEvent.Type.MouseButtonRelease:
                 self.mouseReleaseEvent(event)
-            # Allow the webview to continue processing the event
-            return False
+                return False  # Allow webview to process event too
         return super().eventFilter(obj, event)

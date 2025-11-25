@@ -110,5 +110,8 @@ class LauncherBridge(QObject):
     @pyqtSlot()
     def startDrag(self):
         """Begin dragging the window from the sidebar region."""
+        print("[BRIDGE] startDrag called from JavaScript")
         if self.window and hasattr(self.window, "start_drag_from_sidebar"):
             self.window.start_drag_from_sidebar()
+        else:
+            print("[BRIDGE] ERROR: window or start_drag_from_sidebar method not found")

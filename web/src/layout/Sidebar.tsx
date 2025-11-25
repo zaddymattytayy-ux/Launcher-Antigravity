@@ -30,9 +30,12 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isGameInstall
         { id: 'events' as const, icon: HiCalendarDays, label: 'Events' },
     ];
 
+
     const handleMouseDown = () => {
+        console.log('[SIDEBAR] Mouse down on sidebar - calling bridge.startDrag()');
         bridge.startDrag();
     };
+
 
     return (
         <aside className="sidebar react-sidebar" onMouseDown={handleMouseDown}>
