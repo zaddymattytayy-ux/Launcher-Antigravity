@@ -41,17 +41,17 @@
     display: grid;
     grid-template-columns: 300px 1fr;
     gap: 20px;
-    flex: 1;
+    max-height: 500px;
 }
 
 .topics-panel {
     background: var(--glass-bg);
-    backdrop-filter: blur(var(--glass-blur));
     border: 1px solid var(--glass-border);
     border-radius: 20px;
     padding: 20px;
     display: flex;
     flex-direction: column;
+    max-height: 500px;
 }
 
 .topics-list {
@@ -60,6 +60,7 @@
     flex-direction: column;
     gap: 8px;
     overflow-y: auto;
+    min-height: 0;
 }
 
 .topic-item {
@@ -93,7 +94,6 @@
 
 .guide-panel {
     background: var(--glass-bg);
-    backdrop-filter: blur(var(--glass-blur));
     border: 1px solid var(--glass-border);
     border-radius: 20px;
     padding: 32px;

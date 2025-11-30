@@ -29,4 +29,7 @@ dist-ssr
 /Launcher_Antigravity
 /venv
 /web/node_modules
+/Demo
+/MockLauncher
+/Template
 >>>>>>> Stashed changes

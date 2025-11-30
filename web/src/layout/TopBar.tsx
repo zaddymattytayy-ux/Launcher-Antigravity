@@ -5,7 +5,7 @@ import './TopBar.css';
 
 const TopBar: React.FC = () => {
     const handleLaunch = async () => {
-        await bridge.launchGame("1920x1080", true);
+        await bridge.launchGame();
     };
 
     return (

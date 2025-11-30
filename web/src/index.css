@@ -2,16 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Glassmorphism CSS Variables */
+/* Modern Glassmorphism CSS Variables */
 :root {
   /* Layout */
   --main-panel-max-width: 1400px;
   --sidebar-width: 80px;
 
-  /* Colors */
+  /* Colors - Neutral palette, NO BLUE */
   --color-bg: #020617;
   --color-surface: #0f172a;
-  --color-purple: #8B5CF6;
+  --color-purple: #7b4dfb;
   --color-purple-light: #A78BFA;
   --color-orange: #F97316;
   --color-green: #10B981;
@@ -20,23 +20,24 @@
   --color-text-strong: #F1F5F9;
   --color-text-muted: #94A3B8;
 
-  /* Glass effect */
-  --glass-bg: rgba(15, 23, 42, 0.4);
-  --glass-blur: 20px;
-  --glass-border: rgba(255, 255, 255, 0.1);
+  /* Glass effect - Pure neutral glass */
+  --glass-bg: rgba(255, 255, 255, 0.08);
+  --glass-bg-pill: rgba(255, 255, 255, 0.12);
+  --glass-border: rgba(255, 255, 255, 0.22);
+  --glass-border-pill: rgba(255, 255, 255, 0.28);
+  --glass-shadow: 0 0 40px rgba(0, 0, 0, 0.25);
 
-  /* Gradients */
-  --gradient-purple: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);
+  /* Gradients - NO BLUE */
+  --gradient-purple: linear-gradient(135deg, #7b4dfb 0%, #6D28D9 100%);
   --gradient-orange: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
 
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
-  --shadow-glow-purple: 0 0 20px rgba(139, 92, 246, 0.5);
 
   /* Responsive scaling */
-  --card-radius: 24px;
+  --card-radius: 16px;
   --card-padding: 24px;
   --title-font-size: 32px;
 }
@@ -105,4 +106,35 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(139, 92, 246, 0.5);
+}
+
+/* Modern Glass Panel Styling - Pure Neutral Glass */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 16px;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.25);
+  color: #e5e7eb;
+}
+
+/* Headings in glass panels */
+.glass-panel h1,
+.glass-panel h2,
+.glass-panel h3,
+.glass-panel h4 {
+  color: #ffffff;
+  font-weight: 700;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.65);
+}
+
+/* Body text in glass panels */
+.glass-panel p,
+.glass-panel li,
+.glass-panel span,
+.glass-panel small,
+.glass-panel td {
+  color: rgba(226, 232, 240, 0.92);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
 }

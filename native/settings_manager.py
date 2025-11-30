@@ -11,10 +11,11 @@ class SettingsManager:
         """Return default settings structure"""
         return {
             "language": "en",
-            "resolution": "1920x1080",
+            "resolution": "1366x768",
             "muteInactiveTabs": False,
             "embedGameWindow": False,
             "processLimit": 3,
+            "max_clients": 3,
             "game_executable": "main.exe",
             "window_mode": True,
             "sound": True,
@@ -22,7 +23,8 @@ class SettingsManager:
             "server_name": "MU Online Custom Server",
             "version": "1.0.0",
             "update_url": "http://localhost/update/",
-            "api_url": "http://localhost/CustomLauncher/api/"
+            "api_url": "http://localhost/CustomLauncher/api/",
+            "kill_unmanaged_clients": False
         }
 
     def load(self):
@@ -162,4 +164,3 @@ class SettingsManager:
         except Exception as e:
             print(f"Error: {e}")
             return False
-

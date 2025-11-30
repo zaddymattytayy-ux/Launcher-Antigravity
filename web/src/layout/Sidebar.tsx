@@ -2,7 +2,6 @@ import React from 'react';
 import {
     HiHome,
     HiChartBar,
-    HiCurrencyDollar,
     HiBookOpen,
     HiCalendarDays,
     HiShieldCheck,
@@ -25,7 +24,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isGameInstall
     const navItems = [
         { id: 'home' as const, icon: HiHome, label: 'Home' },
         { id: 'rankings' as const, icon: HiChartBar, label: 'Rankings' },
-        { id: 'donate' as const, icon: HiCurrencyDollar, label: 'Donate' },
+        // { id: 'donate' as const, icon: HiCurrencyDollar, label: 'Donate' }, // Hidden - work in progress
         { id: 'guides' as const, icon: HiBookOpen, label: 'Guides' },
         { id: 'events' as const, icon: HiCalendarDays, label: 'Events' },
     ];

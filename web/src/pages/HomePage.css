@@ -3,7 +3,6 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
-  border-radius: 24px;
 }
 
 .home-bg {
@@ -12,16 +11,17 @@
   background-image: url("/background.png");
   background-size: cover;
   background-position: center;
-  filter: blur(18px);
-  transform: scale(1.05);
+  filter: blur(10px) brightness(0.70);
+  transform: scale(1.08);
+  z-index: 0;
 }
 
 .home-content {
   position: relative;
-  inset: 0;
+  z-index: 1;
   display: flex;
   flex-direction: column;
-  padding: 24px 40px;
+  padding: 20px 32px 24px;
   box-sizing: border-box;
   height: 100%;
 }
@@ -30,7 +30,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
 .home-top-left,
@@ -42,18 +43,17 @@
 .online-pill,
 .downloading-pill {
   height: 41px;
-  width: 225px;
+  width: 270px;
   border-radius: 9999px;
   display: inline-flex;
   align-items: center;
   padding: 0 14px;
-  background: rgba(12, 15, 30, 0.7);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.28);
   font-size: 13px;
   font-weight: 600;
   color: var(--color-text-strong);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.25);
   gap: 10px;
   box-sizing: border-box;
 }
@@ -64,8 +64,8 @@
 }
 
 .downloading-pill.warning {
-  background: rgba(245, 158, 11, 0.16);
-  border-color: rgba(245, 158, 11, 0.3);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.28);
   color: #fcd34d;
 }
 
@@ -88,22 +88,25 @@
 
 .hero {
   margin-top: 0;
-  margin-bottom: 28px;
+  margin-bottom: 20px;
   max-width: 800px;
+  flex-shrink: 0;
 }
 
 .hero-title {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 700;
   letter-spacing: 0.02em;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
 }
 
 .hero-subtitle {
-  font-size: 14px;
-  line-height: 1.6;
-  opacity: 0.85;
-  margin-bottom: 20px;
+  font-size: 13px;
+  line-height: 1.55;
+  opacity: 0.88;
+  margin-bottom: 16px;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
 }
 
 .hero-actions {
@@ -139,12 +142,13 @@
 .hero-button-secondary {
   background: rgba(255, 255, 255, 0.08);
   color: var(--color-text-base);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
 }
 
 .hero-button-secondary:hover {
   transform: translateY(-2px);
   background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.40);
 }
 
 .hero-button-admin {
@@ -157,49 +161,47 @@
   transform: translateY(-2px);
 }
 
+/* Updated Layout for Glass Panels */
 .home-panels {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
   gap: 24px;
-  margin-top: 8px;
-  flex: 0 0 auto;
+  padding: 20px 40px 32px;
+  flex: 1;
+  min-height: 0;
+  align-items: stretch;
 }
 
+/* Glass Panel Styling */
 .home-panel {
-  height: 340px;
-  padding: 22px 22px;
-  border-radius: 32px;
-  backdrop-filter: blur(18px);
-  background: rgba(12, 15, 30, 0.7);
-  box-shadow: 0 22px 40px rgba(0, 0, 0, 0.35);
+  width: 340px;
+  min-height: 365px;
+  max-height: 365px;
+  padding: 24px 28px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
 }
 
 .panel-header {
-  margin-bottom: 18px;
-  padding-bottom: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   text-align: center;
+  flex-shrink: 0;
 }
 
-.panel-title {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  color: var(--color-purple-light);
-  text-transform: uppercase;
-}
 
 .panel-body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   overflow-y: auto;
   padding-right: 4px;
+  min-height: 0;
 }
 
 .panel-body::-webkit-scrollbar {
@@ -211,35 +213,50 @@
   border-radius: 4px;
 }
 
-.news-item h4 {
+.panel-title {
   font-size: 14px;
-  font-weight: 600;
-  color: var(--color-text-strong);
-  margin: 0 0 6px 0;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--color-purple-light);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.news-item h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 4px 0;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.7);
 }
 
 .news-item p {
-  font-size: 13px;
-  color: var(--color-text-muted);
+  font-size: 12px;
+  color: rgba(226, 232, 240, 0.85);
   margin: 0;
-  line-height: 1.5;
+  line-height: 1.45;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8), 0 1px 2px rgba(0, 0, 0, 0.7);
 }
 
 .panel-footer {
   display: flex;
   justify-content: center;
-  gap: 8px;
-  margin-top: 16px;
+  gap: 6px;
+  margin-top: 12px;
+  flex-shrink: 0;
 }
 
 .page-btn {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  border: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
   background: rgba(255, 255, 255, 0.08);
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -250,11 +267,48 @@
 
 .page-btn:hover {
   background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.40);
   color: #fff;
 }
 
 .page-btn.active {
   background: var(--gradient-purple);
+  border-color: transparent;
   color: #fff;
   box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+/* Update button style */
+.hero-button-update {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #fff;
+  box-shadow: 0 12px 26px rgba(245, 158, 11, 0.4);
+}
+
+.hero-button-update:hover {
+  transform: translateY(-2px);
+}
+
+.hero-button-update:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.hero-button-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Launch error message */
+.launch-error {
+  margin-top: 12px;
+  padding: 10px 16px;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: #fca5a5;
+  font-size: 13px;
+  max-width: 500px;
 }

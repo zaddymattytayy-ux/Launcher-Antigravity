@@ -11,5 +11,17 @@ module.exports = {
       },
     },
   },
+  corePlugins: {
+    backdropFilter: false,
+    backdropBlur: false,
+    backdropBrightness: false,
+    backdropContrast: false,
+    backdropGrayscale: false,
+    backdropHueRotate: false,
+    backdropInvert: false,
+    backdropOpacity: false,
+    backdropSaturate: false,
+    backdropSepia: false,
+  },
   plugins: [],
 };

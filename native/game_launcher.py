@@ -2,7 +2,7 @@ import subprocess
 import psutil
 import os
 import time
-from PyQt6.QtCore import QProcess, QTimer
+from PyQt6.QtCore import QProcess, QTimer, QObject, pyqtSignal
 from PyQt6.QtWidgets import QWidget, QVBoxLayout
 
 try:
@@ -14,14 +14,22 @@ except ImportError:
     WIN32_AVAILABLE = False
     print("Warning: pywin32 not available. Window embedding will not work.")
 
-class GameLauncher:
+# Import the new PID-based window embedding module
+from window_embed import find_mu_hwnd, embed_window, verify_and_fix_embed
+
+class GameLauncher(QObject):
+    # Signal emitted when game client window is found (for embedding)
+    clientWindowFound = pyqtSignal(int)  # HWND
+    
     def __init__(self, settings_manager, parent_widget=None):
+        super().__init__()
         self.settings = settings_manager
         self.parent_widget = parent_widget
         self.process = None
         self.game_hwnd = None
         self.embedded_widget = None
         self.process_list = []  # Track all launched processes
+        self.managed_pids = set()  # PIDs launched by this launcher (for anti-direct-launch detection)
         
     def launch(self, config=None):
         """
@@ -34,8 +42,10 @@ class GameLauncher:
             tuple: (success: bool, message: str)
         """
         game_path = self.settings.get("game_executable", "main.exe")
-        max_clients = self.settings.get("processLimit", 3)
-        embed_window = self.settings.get("embedGameWindow", False)
+        # Support both config key names
+        max_clients = self.settings.get("processLimit") or self.settings.get("max_clients", 3)
+        # Fix #1: Support both config key names for embedding
+        embed_window = self.settings.get("embed_game_window") or self.settings.get("embedGameWindow", False)
         
         # Check process limit
         if self.count_running_instances(os.path.basename(game_path)) >= max_clients:
@@ -56,8 +66,13 @@ class GameLauncher:
     def _launch_normal(self, game_path):
         """Launch game normally without embedding"""
         try:
-            process = subprocess.Popen([game_path])
+            # Use the directory of the game executable as the working directory
+            game_dir = os.path.dirname(os.path.abspath(game_path))
+            process = subprocess.Popen([game_path], cwd=game_dir)
             self.process_list.append(process)
+            # Track this PID as managed
+            self.managed_pids.add(process.pid)
+            print(f"[GameLauncher] Started process with PID {process.pid}")
             return True, "Game launched successfully"
         except Exception as e:
             return False, str(e)
@@ -70,83 +85,68 @@ class GameLauncher:
         if not self.parent_widget:
             return False, "No parent widget provided for embedding"
         
-        # Create QProcess for better control
-        self.process = QProcess()
-        self.process.setProgram(game_path)
+        # Use the directory of the game executable as the working directory
+        game_dir = os.path.dirname(os.path.abspath(game_path))
         
-        # Start the process
-        self.process.start()
-        
-        if not self.process.waitForStarted(5000):
-            return False, "Failed to start game process"
-        
-        # Get the process ID
-        pid = self.process.processId()
-        
-        # Wait for the game window to appear and embed it
-        QTimer.singleShot(1000, lambda: self._find_and_embed_window(pid))
-        
-        return True, "Game launched (embedding window...)"
-    
-    def _find_and_embed_window(self, pid):
-        """Find the game window by PID and embed it"""
-        if not WIN32_AVAILABLE:
-            return
-        
-        def enum_windows_callback(hwnd, windows):
-            if win32gui.IsWindowVisible(hwnd):
-                _, window_pid = win32process.GetWindowThreadProcessId(hwnd)
-                if window_pid == pid:
-                    windows.append(hwnd)
-            return True
-        
-        # Find all windows belonging to this process
-        windows = []
-        win32gui.EnumWindows(enum_windows_callback, windows)
-        
-        if windows:
-            # Take the first visible window
-            self.game_hwnd = windows[0]
-            self._embed_window(self.game_hwnd)
-        else:
-            # Retry after a short delay
-            QTimer.singleShot(500, lambda: self._find_and_embed_window(pid))
-    
-    def _embed_window(self, hwnd):
-        """Embed the game window into the parent widget"""
-        if not WIN32_AVAILABLE or not self.parent_widget:
-            return
-        
+        # Launch process normally
         try:
-            # Create a container widget if not exists
-            if not self.embedded_widget:
-                self.embedded_widget = QWidget(self.parent_widget)
-                layout = QVBoxLayout(self.embedded_widget)
-                layout.setContentsMargins(0, 0, 0, 0)
+            process = subprocess.Popen([game_path], cwd=game_dir)
+            self.process_list.append(process)
+            self.managed_pids.add(process.pid)
             
-            # Get the parent widget's window handle
-            parent_hwnd = int(self.embedded_widget.winId())
+            # Start polling for window
+            self._poll_for_window(process.pid, attempts=0, max_attempts=10)
             
-            # Set the game window as a child of our widget
-            win32gui.SetParent(hwnd, parent_hwnd)
+            return True, "Game launched (embedding window...)"
+        except Exception as e:
+            return False, f"Failed to launch: {str(e)}"
+    
+    def _poll_for_window(self, pid, attempts, max_attempts):
+        """Poll for the game window to appear and emit signal when found."""
+        if attempts >= max_attempts:
+            print(f"[GameLauncher] Failed to find window after {max_attempts} attempts")
+            return
+        
+        # Use new PID-based window finder (ignores debugger windows automatically)
+        hwnd = find_mu_hwnd()
+        
+        if hwnd:
+            print(f"[GameLauncher] Found game window HWND {hwnd}")
+            self.game_hwnd = hwnd
+            self.clientWindowFound.emit(hwnd)
+        else:
+            # Retry after 300ms
+            QTimer.singleShot(300, lambda: self._poll_for_window(pid, attempts + 1, max_attempts))
+    
+    def reparent_game_window_to_container(self, hwnd: int, container_hwnd: int, width: int, height: int) -> bool:
+        """
+        Re-parent the game window into the Qt container using the new window_embed module.
+        
+        Args:
+            hwnd: Game window handle
+            container_hwnd: Container widget window handle
+            width: Target width
+            height: Target height
             
-            # Remove window decorations
-            style = win32gui.GetWindowLong(hwnd, win32con.GWL_STYLE)
-            style &= ~win32con.WS_CAPTION
-            style &= ~win32con.WS_THICKFRAME
-            win32gui.SetWindowLong(hwnd, win32con.GWL_STYLE, style)
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            # Use the new PID-based embedding system
+            success = embed_window(hwnd, container_hwnd, width, height)
             
-            # Resize to fit the container
-            rect = self.embedded_widget.rect()
-            win32gui.MoveWindow(hwnd, 0, 0, rect.width(), rect.height(), True)
+            if success:
+                # Track embedded state for verification
+                self.game_hwnd = hwnd
+                self.hwnd_host = container_hwnd
             
-            # Show the window
-            win32gui.ShowWindow(hwnd, win32con.SW_SHOW)
-            
-            print(f"Game window embedded successfully (HWND: {hwnd})")
+            return success
             
         except Exception as e:
-            print(f"Error embedding window: {e}")
+            print(f"[Embed] ERROR: Reparenting failed with exception: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
     
     def bring_to_front(self):
         """Bring the game window to front"""
@@ -183,28 +183,95 @@ class GameLauncher:
         
         # Close embedded process if exists
         if self.process and self.process.state() == QProcess.ProcessState.Running:
+            pid = self.process.processId()
             self.process.terminate()
             if not self.process.waitForFinished(3000):
                 self.process.kill()
+            self.managed_pids.discard(pid)
             success = True
         
         # Close any tracked processes
         for proc in self.process_list:
             try:
                 if proc.poll() is None:  # Process is still running
+                    pid = proc.pid
                     proc.terminate()
                     time.sleep(0.5)
                     if proc.poll() is None:
                         proc.kill()
+                    self.managed_pids.discard(pid)
                     success = True
             except Exception as e:
                 print(f"Error closing process: {e}")
         
-        # Clean up
+        # Clean up embedded state
+        if self.game_hwnd:
+            print(f"[GameLauncher] Clearing embedded HWND {self.game_hwnd}")
         self.game_hwnd = None
         self.process_list = []
         
         return success
+    
+    def get_unmanaged_processes(self):
+        """
+        Find game processes that were NOT launched by this launcher.
+        Returns list of dicts with pid, name info for unmanaged processes.
+        """
+        game_name = os.path.basename(self.settings.get("game_executable", "main.exe"))
+        unmanaged = []
+        
+        # Clean up terminated PIDs from managed set
+        self._cleanup_terminated_pids()
+        
+        for proc in psutil.process_iter(['pid', 'name']):
+            try:
+                if proc.info['name'] == game_name:
+                    pid = proc.info['pid']
+                    if pid not in self.managed_pids:
+                        unmanaged.append({
+                            'pid': pid,
+                            'name': proc.info['name']
+                        })
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                pass
+        
+        return unmanaged
+    
+    def _cleanup_terminated_pids(self):
+        """Remove PIDs from managed_pids that are no longer running"""
+        to_remove = set()
+        for pid in self.managed_pids:
+            if not psutil.pid_exists(pid):
+                to_remove.add(pid)
+        self.managed_pids -= to_remove
+    
+    def kill_unmanaged_process(self, pid: int) -> bool:
+        """
+        Kill an unmanaged game process by PID.
+        Returns True if successful.
+        """
+        try:
+            proc = psutil.Process(pid)
+            game_name = os.path.basename(self.settings.get("game_executable", "main.exe"))
+            
+            # Safety check: only kill if it's actually the game executable
+            if proc.name() == game_name and pid not in self.managed_pids:
+                proc.terminate()
+                proc.wait(timeout=3)
+                print(f"[GameLauncher] Killed unmanaged process PID {pid}")
+                return True
+        except psutil.NoSuchProcess:
+            return True  # Already gone
+        except psutil.TimeoutExpired:
+            try:
+                proc.kill()
+                return True
+            except Exception:
+                pass
+        except Exception as e:
+            print(f"[GameLauncher] Failed to kill PID {pid}: {e}")
+        
+        return False
     
     def _find_window_by_process_name(self, process_name):
         """Find a window handle by process name"""
@@ -254,4 +321,3 @@ class GameLauncher:
                 pass
         
         return processes
-

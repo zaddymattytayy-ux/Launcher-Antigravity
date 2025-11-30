@@ -18,7 +18,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px 0;
-  background: linear-gradient(180deg, rgba(42, 46, 61, 1) 0%, rgba(26, 29, 40, 1) 100%);
+  background: transparent;
   border-right: 1px solid rgba(255, 255, 255, 0.08);
   pointer-events: none;
 }
@@ -75,8 +75,8 @@
 }
 
 .sidebar-icon {
-  width: 40px;
-  height: 40px;
+  width: 50px;
+  height: 50px;
   border-radius: 9999px;
   display: flex;
   align-items: center;
@@ -89,19 +89,21 @@
 }
 
 .nav-icon {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.28);
 }
 
 .nav-icon:hover {
   transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.40);
 }
 
 .nav-icon.active {
-  background: var(--gradient-purple);
   color: #fff;
-  box-shadow: 0 0 16px rgba(140, 82, 255, 0.4);
+  background: #7b4dfb;
+  border: 1px solid rgba(255, 255, 255, 0.40);
+  box-shadow: 0 12px 26px rgba(139, 92, 246, 0.45);
 }
 
 .sidebar-bottom {
@@ -113,8 +115,8 @@
 }
 
 .status-icon {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .status-icon.installed {

@@ -1,8 +1,8 @@
-from PyQt6.QtWidgets import QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QApplication, QToolButton, QButtonGroup
+from PyQt6.QtWidgets import QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QApplication, QToolButton, QButtonGroup, QGraphicsColorizeEffect, QStackedLayout
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWebChannel import QWebChannel
 from PyQt6.QtCore import QUrl, Qt, QEvent, QSize
-from PyQt6.QtGui import QCursor, QIcon
+from PyQt6.QtGui import QCursor, QIcon, QColor
 
 from pathlib import Path
 
@@ -11,6 +11,17 @@ from settings_manager import SettingsManager
 from game_launcher import GameLauncher
 from screenshot_service import ScreenshotService
 from event_timer_service import EventTimerService
+from update_manager import UpdateManager
+from window_embed import verify_and_fix_embed
+
+# Check Win32 availability
+try:
+    import win32gui
+    import win32con
+    WIN32_AVAILABLE = True
+except ImportError:
+    WIN32_AVAILABLE = False
+    print("Warning: pywin32 not available. Window embedding will not work.")
 
 # Constants
 SIDEBAR_WIDTH = 80
@@ -37,6 +48,13 @@ class LauncherApp(QMainWindow):
         # Initialize drag variables
         self._dragging = False
         self._drag_pos = None
+        
+        # Initialize embedded game window handle
+        self.game_hwnd = None
+        self.hwnd_host = None
+        
+        # Timer for verifying and fixing embed (prevents game from escaping)
+        self.embed_verify_timer = None
 
         # Setup central widget
         self.rootFrame = QWidget(self)
@@ -89,12 +107,10 @@ class LauncherApp(QMainWindow):
         from PyQt6.QtWidgets import QFrame
         self.nav_pill_frame = QFrame(self.sidebar)
         self.nav_pill_frame.setObjectName("NavPillFrame")
-        self.nav_pill_frame.setFixedSize(48, 145)
+        self.nav_pill_frame.setFixedSize(48, 152)
         
         nav_pill_layout = QVBoxLayout(self.nav_pill_frame)
         nav_pill_layout.setContentsMargins(0, 0, 0, 0)
-        nav_pill_layout.setSpacing(0) # Spacing handled by distribution or manual if needed, but user said spacing 16 in prompt setup, let's check
-        # User prompt: "self.navPillLayout.setSpacing(16)"
         nav_pill_layout.setSpacing(16)
         nav_pill_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -126,18 +142,19 @@ class LauncherApp(QMainWindow):
         sidebar_layout.addWidget(self.btn_power, 0, Qt.AlignmentFlag.AlignHCenter)
 
 
-        # --- Web container ---
+        # --- Web container (Fix #4: Use QStackedLayout for proper overlay) ---
         self.web_container = QWidget(self.rootFrame)
         self.web_container.setObjectName("WebContainer")
-        web_layout = QVBoxLayout(self.web_container)
-        web_layout.setContentsMargins(0, 0, 0, 0)
-        web_layout.setSpacing(0)
+        self.web_stacked_layout = QStackedLayout(self.web_container)
+        self.web_stacked_layout.setContentsMargins(0, 0, 0, 0)
+        self.web_stacked_layout.setStackingMode(QStackedLayout.StackingMode.StackOne)
 
         # Initialize managers (pass rootFrame for embedding support)
         self.settings_manager = SettingsManager()
         self.game_launcher = GameLauncher(self.settings_manager, self.rootFrame)
         self.screenshot_service = ScreenshotService(self.settings_manager)
         self.event_timer_service = EventTimerService(self.settings_manager)
+        self.update_manager = UpdateManager(self.settings_manager)
 
         # WebEngineView goes inside web_container (content width only)
         self.webview = QWebEngineView(self.web_container)
@@ -145,7 +162,18 @@ class LauncherApp(QMainWindow):
         self.webview.setMaximumSize(CONTENT_WIDTH, CONTENT_HEIGHT)
         self.webview.installEventFilter(self)
 
-        web_layout.addWidget(self.webview)
+        # Game container for embedding (same size as webview, hidden by default)
+        self.game_container = QWidget(self.web_container)
+        self.game_container.setMinimumSize(CONTENT_WIDTH, CONTENT_HEIGHT)
+        self.game_container.setMaximumSize(CONTENT_WIDTH, CONTENT_HEIGHT)
+        game_container_layout = QVBoxLayout(self.game_container)
+        game_container_layout.setContentsMargins(0, 0, 0, 0)
+        game_container_layout.setSpacing(0)
+
+        # Add to stacked layout - index 0 = webview, index 1 = game_container
+        self.web_stacked_layout.addWidget(self.webview)
+        self.web_stacked_layout.addWidget(self.game_container)
+        self.web_stacked_layout.setCurrentIndex(0)  # Show webview by default
 
         # Add sidebar + content to main layout
         main_layout.addWidget(self.sidebar)
@@ -158,13 +186,20 @@ class LauncherApp(QMainWindow):
             settings_manager=self.settings_manager,
             game_launcher=self.game_launcher,
             screenshot_service=self.screenshot_service,
-            event_timer_service=self.event_timer_service
+            event_timer_service=self.event_timer_service,
+            update_manager=self.update_manager
         )
         self.channel.registerObject("launcherBridge", self.bridge)
         self.webview.page().setWebChannel(self.channel)
+        
+        # Connect game launcher signals for embedding
+        self.game_launcher.clientWindowFound.connect(self.embed_client_window)
 
         # Start event timer service
         self.event_timer_service.start()
+        
+        # Check for updates on startup
+        self._check_updates_on_startup()
 
         # Apply default resolution sizes (Qt sidebar + content)
         total_width = SIDEBAR_WIDTH + CONTENT_WIDTH
@@ -207,7 +242,7 @@ class LauncherApp(QMainWindow):
 
             /* Navigation pill container */
             #NavPillFrame {
-                background-color: rgba(0, 0, 0, 0.25);
+                background-color: rgba(255, 255, 255, 0.06);
                 border-radius: 24px;
             }
 
@@ -218,13 +253,21 @@ class LauncherApp(QMainWindow):
                 padding: 0;
                 margin: 0;
                 border-radius: 0;
+                min-width: 48px;
+                max-width: 48px;
+                min-height: 48px;
+                max-height: 48px;
             }
 
             #SidebarButton:hover {
-                background: transparent;
+                /* No background change on hover */
             }
-            
-            /* Active state styling handled via icon color update in logic or separate mechanism if needed */
+
+            /* Active/selected state - no background, icon color handled by code */
+            #SidebarButton:checked {
+                background: transparent;
+                border-radius: 0;
+            }
 
             #ExitButton {
                 border-radius: 9999px;
@@ -254,6 +297,12 @@ class LauncherApp(QMainWindow):
         self.nav_group.addButton(self.btn_events)
         self.nav_group.addButton(self.btn_donate)
         
+        # Connect button toggled to update icon colors
+        self.nav_group.buttonToggled.connect(self._update_icon_colors)
+        
+        # Initial icon color update
+        self._update_icon_colors(self.btn_home, True)
+        
         # Connect buttons to navigation
         self.logo_btn.clicked.connect(lambda: self._handle_logo_click())
         self.btn_home.clicked.connect(lambda: self._navigate_to('home'))
@@ -262,9 +311,43 @@ class LauncherApp(QMainWindow):
         self.btn_events.clicked.connect(lambda: self._navigate_to('events'))
         self.btn_donate.clicked.connect(lambda: self._navigate_to('donate'))
 
-        # Load frontend
-        url = QUrl("http://localhost:5175")
-        print("Loading development server: http://localhost:5175")
+        # Load frontend (Fix #7: Support production mode)
+        self._load_frontend()
+
+    def _load_frontend(self) -> None:
+        """Load frontend - try dev server first, fallback to dist/index.html."""
+        import socket
+        
+        # Base = repo root (folder that contains `web` and `native`)
+        base_path = Path(__file__).resolve().parent.parent
+        dist_index = base_path / "web" / "dist" / "index.html"
+        
+        # Check if dev server is running on localhost:5175
+        dev_server_available = False
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(0.5)  # 500ms timeout
+            result = sock.connect_ex(('localhost', 5175))
+            sock.close()
+            dev_server_available = (result == 0)
+        except Exception as e:
+            print(f"[FRONTEND] Dev server check failed: {e}")
+            dev_server_available = False
+        
+        if dev_server_available:
+            # Dev mode: use Vite dev server
+            url = QUrl("http://localhost:5175")
+            print(f"[FRONTEND] Loading dev server: {url.toString()}")
+        elif dist_index.exists():
+            # Production mode: use built dist
+            url = QUrl.fromLocalFile(str(dist_index))
+            print(f"[FRONTEND] Loading dist file: {dist_index}")
+        else:
+            # Error: neither available
+            print("[FRONTEND] ERROR: Could not find dev server or dist/index.html")
+            print("[FRONTEND] Attempting to load dev server anyway (will show blank if unavailable)")
+            url = QUrl("http://localhost:5175")
+        
         self.webview.load(url)
 
     def _navigate_to(self, view_name: str):
@@ -288,7 +371,7 @@ class LauncherApp(QMainWindow):
         """Create a styled sidebar button with icon (transparent, no bg)."""
         btn = QToolButton(self.sidebar)
         btn.setIcon(icon)
-        btn.setIconSize(QSize(32, 32))  # Updated to 32px as per request
+        btn.setIconSize(QSize(26, 26))  # Updated to 26px as per request
         btn.setToolTip(tooltip)
         btn.setCheckable(True)
         btn.setAutoExclusive(True)
@@ -296,12 +379,31 @@ class LauncherApp(QMainWindow):
         btn.setObjectName("SidebarButton")
         return btn
 
+    def _update_icon_colors(self, button, checked):
+        """Apply purple colorize effect to active button, remove from others."""
+        if not button:
+            return
+            
+        if checked:
+            effect = QGraphicsColorizeEffect(button)
+            effect.setColor(QColor("#7B4DFB"))
+            button.setGraphicsEffect(effect)
+        else:
+            button.setGraphicsEffect(None)
+
+    def get_game_container_hwnd(self) -> int:
+        """Get the native window handle of the game container widget."""
+        return int(self.game_container.winId())
+    
     def set_resolution(self, width: int, height: int):
         """Set the resolution for the content area (Qt sidebar is extra)."""
         total_width = SIDEBAR_WIDTH + width
 
         self.webview.setMinimumSize(width, height)
         self.webview.setMaximumSize(width, height)
+        
+        self.game_container.setMinimumSize(width, height)
+        self.game_container.setMaximumSize(width, height)
 
         self.setFixedSize(total_width, height)
         self.resize(total_width, height)
@@ -312,6 +414,10 @@ class LauncherApp(QMainWindow):
 
         # Log geometry details
         self.log_geometry("RESIZE")
+        
+        # If game is embedded, resize the embedded window
+        if self.game_container.isVisible():
+            self._resize_game_container_to_content()
 
     def log_geometry(self, label: str):
         """Log window geometry and screen DPI information"""
@@ -321,16 +427,19 @@ class LauncherApp(QMainWindow):
         print(f"[{label}] SCREEN logical DPI: {screen.logicalDotsPerInch()}")
         print(f"[{label}] SCREEN devicePixelRatio: {screen.devicePixelRatio()}")
 
-    def _in_sidebar(self, event) -> bool:
-        """Return True if the mouse event is within the sidebar area."""
-        x = int(event.position().x())
-        return 0 <= x < SIDEBAR_WIDTH
+    def _in_sidebar(self, global_x: int, global_y: int) -> bool:
+        """Return True if the global coordinates are within the sidebar area."""
+        from PyQt6.QtCore import QPoint
+        local = self.mapFromGlobal(QPoint(global_x, global_y))
+        return 0 <= local.x() < SIDEBAR_WIDTH
 
     def mousePressEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton and self._in_sidebar(event):
-            self._dragging = True
-            self._drag_pos = event.globalPosition().toPoint()
-            print(f"[DRAG] Start from sidebar at {self._drag_pos}")
+        if event.button() == Qt.MouseButton.LeftButton:
+            global_pos = event.globalPosition().toPoint()
+            if self._in_sidebar(global_pos.x(), global_pos.y()):
+                self._dragging = True
+                self._drag_pos = global_pos
+                print(f"[DRAG] Start from sidebar at {self._drag_pos}")
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
@@ -351,3 +460,136 @@ class LauncherApp(QMainWindow):
     def eventFilter(self, obj, event):
         # Keep eventFilter for other purposes if needed
         return super().eventFilter(obj, event)
+    
+    def start_drag_from_bridge(self, global_x: int, global_y: int):
+        """
+        Start window dragging from a bridge call (only if inside sidebar).
+        """
+        from PyQt6.QtCore import QPoint
+        if self._in_sidebar(global_x, global_y):
+            self._dragging = True
+            self._drag_pos = QPoint(global_x, global_y)
+            print(f"[DRAG] Started from bridge at ({global_x}, {global_y})")
+        else:
+            print(f"[DRAG] Rejected - not in sidebar region")
+    
+    def embed_client_window(self, hwnd: int):
+        """Embed the game client window into the launcher using Win32 re-parenting."""
+        try:
+            if not WIN32_AVAILABLE:
+                print("[Embed] Win32 APIs not available")
+                self._restore_webview()
+                return
+            
+            print(f"[Embed] Preparing to embed game window HWND: {hwnd}")
+            
+            # CRITICAL: Ensure game_container has a native window created
+            # Qt won't create the native window until the widget is shown or winId() is called
+            print("[Embed] Ensuring game_container is realized...")
+            self.game_container.setAttribute(Qt.WidgetAttribute.WA_NativeWindow, True)
+            self.game_container.show()  # Make sure native window is created
+            
+            # Get container info
+            container_hwnd = self.get_game_container_hwnd()
+            width = self.game_container.width()
+            height = self.game_container.height()
+            
+            print(f"[Embed] Container HWND: {container_hwnd}")
+            print(f"[Embed] Container size: {width}x{height}")
+            print(f"[Embed] Container visible: {self.game_container.isVisible()}")
+            
+            # Validate container HWND
+            if container_hwnd == 0:
+                print("[Embed] ERROR: Container HWND is 0 (invalid)")
+                self._restore_webview()
+                return
+            
+            # Use GameLauncher's Win32 re-parenting method
+            success = self.game_launcher.reparent_game_window_to_container(
+                hwnd, container_hwnd, width, height
+            )
+            
+            if success:
+                # Switch stacked layout to game container
+                self.web_stacked_layout.setCurrentIndex(1)
+                
+                # Store the hwnd for later use (LauncherApp also tracks it)
+                self.game_hwnd = hwnd
+                self.hwnd_host = container_hwnd
+                
+                # Start timer to verify and maintain embedding
+                self._start_embed_verification_timer()
+                
+                print(f"[Embed] Successfully embedded game window (HWND: {hwnd})")
+                print(f"[Embed] Stacked layout now showing index: {self.web_stacked_layout.currentIndex()}")
+            else:
+                # Fall back to external window mode
+                print("[Embed] Failed to embed client, falling back to external window mode")
+                self._restore_webview()
+            
+        except Exception as e:
+            print(f"[Embed] Error embedding window: {e}")
+            import traceback
+            traceback.print_exc()
+            self._restore_webview()
+
+    def _restore_webview(self):
+        """Fix #8: Restore webview visibility on embed failure."""
+        self.web_stacked_layout.setCurrentIndex(0)
+        self._stop_embed_verification_timer()
+        print("[Embed] Restored webview after embed failure")
+    
+    def _resize_game_container_to_content(self):
+        """Resize embedded game window to match content area size."""
+        if not self.game_hwnd or not WIN32_AVAILABLE:
+            return
+        
+        try:
+            import win32gui
+            
+            width = self.game_container.width()
+            height = self.game_container.height()
+            
+            # Resize the embedded window using stored hwnd
+            win32gui.MoveWindow(self.game_hwnd, 0, 0, width, height, True)
+            print(f"[Embed] Resized embedded window to {width}x{height}")
+        except Exception as e:
+            print(f"[Embed] Error resizing embedded window: {e}")
+    
+    def _start_embed_verification_timer(self):
+        """Start periodic verification of window embedding to prevent game from escaping."""
+        from PyQt6.QtCore import QTimer
+        
+        if self.embed_verify_timer:
+            self.embed_verify_timer.stop()
+        
+        self.embed_verify_timer = QTimer(self)
+        self.embed_verify_timer.setInterval(1000)  # Check every 1 second
+        self.embed_verify_timer.timeout.connect(self._verify_embed)
+        self.embed_verify_timer.start()
+        print("[Embed] Started verification timer (checking every 1s)")
+    
+    def _stop_embed_verification_timer(self):
+        """Stop the embed verification timer."""
+        if self.embed_verify_timer:
+            self.embed_verify_timer.stop()
+            self.embed_verify_timer = None
+            print("[Embed] Stopped verification timer")
+    
+    def _verify_embed(self):
+        """Verify and re-apply embedding if needed (called by timer)."""
+        if not self.game_hwnd or not self.hwnd_host:
+            return
+        
+        width = self.game_container.width()
+        height = self.game_container.height()
+        
+        # Use window_embed module's verify function
+        verify_and_fix_embed(self.game_hwnd, self.hwnd_host, width, height)
+    
+    def _check_updates_on_startup(self):
+        """Check for updates when launcher starts"""
+        if self.update_manager:
+            current_version = self.settings_manager.get('version', '1.0.0')
+            print(f"[Launcher] Checking for updates... Current version: {current_version}")
+            self.update_manager.check_for_updates(current_version)

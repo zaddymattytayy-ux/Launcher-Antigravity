@@ -1,61 +1,88 @@
-.rankings-page {
+.rankings-hero {
+    margin-top: 0;
+    margin-bottom: 20px;
+    max-width: 800px;
+    flex-shrink: 0;
+}
+
+.rankings-title {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    margin-bottom: 6px;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+}
+
+.rankings-subtitle {
+    font-size: 13px;
+    line-height: 1.55;
+    opacity: 0.88;
+    margin-bottom: 0;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+}
+
+.rankings-container {
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 32px 40px;
-    overflow-y: auto;
-    gap: 24px;
-}
-
-.page-title {
-    font-size: 2rem;
-    margin: 0;
+    gap: 16px;
+    padding: 0 40px 32px;
+    min-height: 0;
 }
 
 .category-tabs {
     display: flex;
     gap: 12px;
+    flex-shrink: 0;
 }
 
 .category-tab {
-    padding: 10px 20px;
+    height: 37px;
+    padding: 0 20px;
     border-radius: 9999px;
     border: none;
-    background: var(--glass-bg);
+    background: rgba(255, 255, 255, 0.08);
     color: var(--color-text-muted);
-    border: 1px solid var(--glass-border);
+    border: 1px solid rgba(255, 255, 255, 0.22);
     cursor: pointer;
     transition: all 0.2s ease;
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
     font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .category-tab:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.40);
+    transform: translateY(-1px);
 }
 
 .category-tab.active {
-    background: var(--gradient-purple);
+    background: #7b4dfb;
     color: white;
     border-color: transparent;
+    box-shadow: 0 8px 20px rgba(123, 77, 251, 0.35);
 }
 
 .filters {
     display: flex;
     gap: 16px;
+    flex-shrink: 0;
 }
 
 .filter-select,
 .filter-search {
-    padding: 10px 16px;
+    height: 37px;
+    padding: 0 16px;
     border-radius: 12px;
-    border: 1px solid var(--glass-border);
-    background: var(--glass-bg);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.08);
     color: var(--color-text-base);
     font-size: 13px;
     font-family: inherit;
-    backdrop-filter: blur(10px);
 }
 
 .filter-select {
@@ -72,12 +99,9 @@
 
 .rankings-table {
     flex: 1;
-    background: var(--glass-bg);
-    backdrop-filter: blur(var(--glass-blur));
-    border: 1px solid var(--glass-border);
-    border-radius: 20px;
-    padding: 20px;
-    overflow-y: auto;
+    margin-top: 32px;
+    padding: 24px 28px;
+    min-height: 0;
 }
 
 table {
@@ -93,22 +117,28 @@ thead th {
     color: var(--color-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    border-bottom: 1px solid var(--glass-border);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 tbody tr {
+    background: transparent;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     transition: background 0.2s ease;
 }
 
+tbody tr:nth-child(even) {
+    background: rgba(15, 23, 42, 0.12);
+}
+
 tbody tr:hover {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.06);
 }
 
 tbody td {
     padding: 12px;
-    color: var(--color-text-base);
+    color: rgba(255, 255, 255, 0.95);
     font-size: 13px;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8), 0 1px 2px rgba(0, 0, 0, 0.7);
 }
 
 .rank-cell {
@@ -121,11 +151,12 @@ tbody td {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: var(--color-text-subtle);
+    background: rgba(148, 163, 184, 0.5);
 }
 
 .rank-dot.top {
-    background: var(--color-green);
+    background: #10b981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
 }
 
 .class-icon {
@@ -133,12 +164,43 @@ tbody td {
 }
 
 .name-cell {
-    font-weight: 600;
-    color: var(--color-text-strong);
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9), 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
 .pagination {
     display: flex;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.page-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--color-text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.page-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.40);
+    color: #fff;
+}
+
+.page-btn.active {
+    background: linear-gradient(135deg, #7b4dfb 0%, #a78bfa 100%);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
 }
